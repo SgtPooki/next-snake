@@ -2,7 +2,7 @@ import Head from 'next/head'
 
 export const HeadComponent = () => (
   <Head>
-    <title>Snake | Built by Marc Müller</title>
+    <title>Snake | Built by Marc Müller & extended by SgtPooki</title>
     <meta name="viewport" content="initial-scale=1.0, width=device-width" />
     <meta name="author" content="Marc Müller" />
     <meta
@@ -18,7 +18,10 @@ export const HeadComponent = () => (
     <meta property="og:url" content="https://next-snake-sgtpooki.vercel.app/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Next-Snake" />
-    <meta property="og:title" content="Next-Snake | Built by Marc Müller" />
+    <meta
+      property="og:title"
+      content="Next-Snake | Built by Marc Müller & extended by SgtPooki"
+    />
     <meta
       property="og:description"
       content="Minimal Snake browser game, built using Next.js"
