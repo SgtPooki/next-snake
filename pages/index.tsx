@@ -400,7 +400,7 @@ export default function SnakeGame() {
       <footer>
         Copyright &copy; <a href="https://mueller.dev">Marc Müller</a> 2022
         &nbsp;|&nbsp;{' '}
-        <a href="https://github.com/marcmll/next-snake">
+        <a href="https://github.com/SgtPooki/next-snake">
           <FontAwesomeIcon icon={['fab', 'github']} /> Github
         </a>
       </footer>

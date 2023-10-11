@@ -3,7 +3,7 @@
 ## What is Next-Snake?
 
 Next-Snake is a minimalistic Snake browser game, built using Next.js and React.\
-I challenge you to beat a score of 30! [Give it a shot!](https://next-snake.vercel.app/)
+I challenge you to beat a score of 30! [Give it a shot!](https://next-snake-sgtpooki.vercel.app/)
 
 ## Why Next.js and React?
 
