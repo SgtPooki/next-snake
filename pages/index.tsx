@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { useState, useEffect, useRef } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import useInterval from '@use-it/interval'
@@ -22,10 +23,11 @@ export default function SnakeGame() {
   const canvasGridSize = 20
 
   // Game Settings
-  const minGameSpeed = 10
-  const maxGameSpeed = 15
+  const minGameSpeed = 5
+  const maxGameSpeed = 10
 
   // Game State
+  const [started, setStarted] = useState(false)
   const [gameDelay, setGameDelay] = useState<number>(1000 / minGameSpeed)
   const [countDown, setCountDown] = useState<number>(4)
   const [running, setRunning] = useState(false)
@@ -65,6 +67,7 @@ export default function SnakeGame() {
 
   // Initialise state and start countdown
   const startGame = () => {
+    setStarted(true)
     setGameDelay(1000 / minGameSpeed)
     setIsLost(false)
     setScore(0)
@@ -78,6 +81,7 @@ export default function SnakeGame() {
     setNewHighscore(false)
     setCountDown(3)
   }
+  const pauseToggle = () => setRunning((prevRunning) => !prevRunning)
 
   // Reset state and check for highscore
   const gameOver = () => {
@@ -227,9 +231,11 @@ export default function SnakeGame() {
     const ctx = canvas?.getContext('2d')
 
     if (ctx && !isLost) {
-      clearCanvas(ctx)
-      drawApple(ctx)
-      drawSnake(ctx)
+      requestAnimationFrame(() => {
+        clearCanvas(ctx)
+        drawApple(ctx)
+        drawSnake(ctx)
+      })
     }
   }, [snake])
 
@@ -237,7 +243,7 @@ export default function SnakeGame() {
   useInterval(
     () => {
       if (!isLost) {
-        updateSnake()
+        requestAnimationFrame(() => updateSnake())
       }
     },
     running && countDown === 0 ? gameDelay : null
@@ -270,6 +276,10 @@ export default function SnakeGame() {
   // Event Listener: Key Presses
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && !isLost) {
+        pauseToggle()
+        return
+      }
       if (
         [
           'ArrowUp',
@@ -378,6 +388,14 @@ export default function SnakeGame() {
             )}
           </div>
         )}
+        {!running &&
+          started &&
+          !isLost && ( // the game is paused
+            <div className="game-overlay">
+              <p className="large">Game Paused</p>
+              <p className="final-score">{`Current score: ${score}`}</p>
+            </div>
+          )}
       </main>
       <footer>
         Copyright &copy; <a href="https://mueller.dev">Marc Müller</a> 2022

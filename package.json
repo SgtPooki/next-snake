@@ -30,6 +30,7 @@
     "sass": "^1.45.2"
   },
   "devDependencies": {
+    "@types/node": "20.8.4",
     "@types/react": "^17.0.38",
     "@typescript-eslint/eslint-plugin": "^5.8.1",
     "eslint": "^8.6.0",
