@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import useInterval from '@use-it/interval'
 
@@ -27,6 +27,9 @@ export default function SnakeGame() {
   const maxGameSpeed = 10
 
   // Game State
+  const [easterEggs, setEasterEggs] = useState({
+    wrap: false,
+  })
   const [started, setStarted] = useState(false)
   const [gameDelay, setGameDelay] = useState<number>(1000 / minGameSpeed)
   const [countDown, setCountDown] = useState<number>(4)
@@ -189,13 +192,29 @@ export default function SnakeGame() {
       x: snake.head.x + velocity.dx,
       y: snake.head.y + velocity.dy,
     }
+    const minX = 0
+    const maxX = canvasWidth / canvasGridSize - 1
+    const minY = 0
+    const maxY = canvasHeight / canvasGridSize - 1
     if (
       nextHeadPosition.x < 0 ||
       nextHeadPosition.y < 0 ||
-      nextHeadPosition.x >= canvasWidth / canvasGridSize ||
-      nextHeadPosition.y >= canvasHeight / canvasGridSize
+      nextHeadPosition.x > maxX ||
+      nextHeadPosition.y > maxY
     ) {
-      gameOver()
+      if (easterEggs.wrap === true) {
+        if (nextHeadPosition.x < 0) {
+          nextHeadPosition.x = maxX // need the NEW x value on the other side of the board
+        } else if (nextHeadPosition.y < 0) {
+          nextHeadPosition.y = maxY
+        } else if (nextHeadPosition.y > maxY) {
+          nextHeadPosition.y = minY
+        } else if (nextHeadPosition.x > maxX) {
+          nextHeadPosition.x = minX
+        }
+      } else {
+        gameOver()
+      }
     }
 
     // Check for collision with apple
@@ -272,12 +291,27 @@ export default function SnakeGame() {
       setGameDelay(1000 / score)
     }
   }, [score])
+  const toggleWrap = useCallback(() => {
+    setEasterEggs((prevEggs) => {
+      console.log(
+        `Easter Egg "wrap" is ${!prevEggs.wrap ? 'enabled!' : 'disabled!'}`
+      )
+      return {
+        ...prevEggs,
+        wrap: !prevEggs.wrap,
+      }
+    })
+  }, [])
 
   // Event Listener: Key Presses
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space' && !isLost) {
         pauseToggle()
+        return
+      }
+      if (e.key === 'e') {
+        toggleWrap()
         return
       }
       if (
@@ -337,7 +371,7 @@ export default function SnakeGame() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [previousVelocity])
+  }, [previousVelocity, toggleWrap, isLost])
 
   return (
     <>
@@ -396,6 +430,12 @@ export default function SnakeGame() {
               <p className="final-score">{`Current score: ${score}`}</p>
             </div>
           )}
+        <button
+          onClick={toggleWrap}
+          style={{ backgroundColor: easterEggs.wrap ? 'green' : 'red' }}
+        >
+          {'Toggle Wrap mode'}
+        </button>
       </main>
       <footer>
         Copyright &copy; <a href="https://mueller.dev">Marc Müller</a> 2022
