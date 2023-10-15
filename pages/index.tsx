@@ -51,6 +51,7 @@ export default function SnakeGame() {
     dx: 0,
     dy: 0,
   })
+  const [pointerEvent, setPointerEvent] = useState<PointerEvent | null>(null)
 
   const clearCanvas = (ctx: CanvasRenderingContext2D) =>
     ctx.clearRect(-1, -1, canvasWidth + 2, canvasHeight + 2)
@@ -303,6 +304,27 @@ export default function SnakeGame() {
     })
   }, [])
 
+  const setDirectionUp = useCallback(() => {
+    if (previousVelocity.dy !== 1) {
+      setVelocity({ dx: 0, dy: -1 })
+    }
+  }, [previousVelocity])
+  const setDirectionDown = useCallback(() => {
+    if (previousVelocity.dy !== -1) {
+      setVelocity({ dx: 0, dy: 1 })
+    }
+  }, [previousVelocity])
+  const setDirectionLeft = useCallback(() => {
+    if (previousVelocity.dx !== 1) {
+      setVelocity({ dx: -1, dy: 0 })
+    }
+  }, [previousVelocity])
+  const setDirectionRight = useCallback(() => {
+    if (previousVelocity.dx !== -1) {
+      setVelocity({ dx: 1, dy: 0 })
+    }
+  }, [previousVelocity])
+
   // Event Listener: Key Presses
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -326,52 +348,79 @@ export default function SnakeGame() {
           'd',
         ].includes(e.key)
       ) {
-        let velocity = { dx: 0, dy: 0 }
+        // let velocity = { dx: 0, dy: 0 }
 
         switch (e.key) {
           case 'ArrowRight':
-            velocity = { dx: 1, dy: 0 }
+          case 'd':
+            setDirectionRight()
             break
           case 'ArrowLeft':
-            velocity = { dx: -1, dy: 0 }
+          case 'a':
+            setDirectionLeft()
             break
           case 'ArrowDown':
-            velocity = { dx: 0, dy: 1 }
+          case 's':
+            setDirectionDown()
             break
           case 'ArrowUp':
-            velocity = { dx: 0, dy: -1 }
-            break
-          case 'd':
-            velocity = { dx: 1, dy: 0 }
-            break
-          case 'a':
-            velocity = { dx: -1, dy: 0 }
-            break
-          case 's':
-            velocity = { dx: 0, dy: 1 }
-            break
           case 'w':
-            velocity = { dx: 0, dy: -1 }
+            setDirectionUp()
             break
           default:
+            setVelocity({ dx: 0, dy: 0 })
             console.error('Error with handleKeyDown')
         }
-        if (
-          !(
-            previousVelocity.dx + velocity.dx === 0 &&
-            previousVelocity.dy + velocity.dy === 0
-          )
-        ) {
-          setVelocity(velocity)
+      }
+    }
+    // we need to handle swipes for mobile devices, and mouse events, so
+    // we should listen for PointerEvents and determine whether they are up/down/left/right moves
+    const handleTouchAndMoseDown = (e: PointerEvent) => {
+      e.preventDefault() // prevent moving the page around
+      setPointerEvent(e)
+    }
+    const handleTouchAndMouseUp = (e: PointerEvent) => {
+      const { clientX: newX, clientY: newY } = e
+      if (pointerEvent == null) {
+        console.error('pointerUp event fired without pointerDown')
+        return
+      }
+      const { x: prevX, y: prevY } = pointerEvent
+      const deltaX = newX - prevX
+      const deltaY = newY - prevY
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        if (deltaX > 0) {
+          setDirectionRight()
+        } else {
+          setDirectionLeft()
+        }
+      } else {
+        if (deltaY > 0) {
+          setDirectionDown()
+        } else {
+          setDirectionUp()
         }
       }
     }
 
     document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener('pointerdown', handleTouchAndMoseDown)
+    document.addEventListener('pointerup', handleTouchAndMouseUp)
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('pointerdown', handleTouchAndMoseDown)
+      document.removeEventListener('pointerup', handleTouchAndMouseUp)
     }
-  }, [previousVelocity, toggleWrap, isLost])
+  }, [
+    previousVelocity,
+    toggleWrap,
+    isLost,
+    setDirectionRight,
+    setDirectionLeft,
+    setDirectionDown,
+    setDirectionUp,
+    pointerEvent,
+  ])
 
   return (
     <>
