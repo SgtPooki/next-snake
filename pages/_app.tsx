@@ -14,6 +14,7 @@ import {
   faArrowDown,
   faArrowLeft,
   faTrophy,
+  faSkullCrossbones,
 } from '@fortawesome/free-solid-svg-icons'
 import { faGithub } from '@fortawesome/free-brands-svg-icons'
 
@@ -24,7 +25,8 @@ library.add(
   faArrowDown,
   faArrowLeft,
   faTrophy,
-  faGithub
+  faGithub,
+  faSkullCrossbones
 )
 config.autoAddCss = false
 

@@ -6,6 +6,11 @@ import useInterval from '@use-it/interval'
 import { HeadComponent as Head } from 'components/Head'
 import { registerDprCanvas } from 'components/lib/resize-utils'
 
+/**
+ * Easter Eggs:
+ * `portal` : Konami Code (up, up, down, down, left, right, left, right)
+ */
+
 type Apple = {
   x: number
   y: number
@@ -29,7 +34,7 @@ export default function SnakeGame() {
 
   // Game State
   const [easterEggs, setEasterEggs] = useState({
-    wrap: false,
+    portal: false,
   })
   const [started, setStarted] = useState(false)
   const [gameDelay, setGameDelay] = useState<number>(1000 / minGameSpeed)
@@ -54,9 +59,78 @@ export default function SnakeGame() {
   })
   const [pointerEvent, setPointerEvent] = useState<PointerEvent | null>(null)
   const [isTouching, setIsTouching] = useState(false)
+  /**
+   * secret codes can be a max of 8 moves in a row, but can be less.
+   * They need to only be directional so we can support mouse, touch, and arrow
+   * events.
+   */
+  const [easterEggCodeBuffer, setEasterEggCodeBuffer] = useState<string[]>([])
+  const addInputToEasterEggCodeBuffer = useCallback((input: string) => {
+    setEasterEggCodeBuffer((prevBuffer) => {
+      const newBuffer = [...prevBuffer, input]
+      if (newBuffer.length > 8) {
+        newBuffer.shift()
+      }
+      return newBuffer
+    })
+  }, [])
 
-  const clearCanvas = (ctx: CanvasRenderingContext2D) =>
+  useEffect(() => {
+    const secretCode = easterEggCodeBuffer.join('')
+    console.log(`secretCode: `, secretCode)
+    // if (!easterEggs.portal && secretCode === 'upupdowndownleftrightleftright') {
+    if (!easterEggs.portal && secretCode.startsWith('upupdowndown')) {
+      console.log('Konami Code entered!')
+      setEasterEggCodeBuffer([])
+      setEasterEggs((prevEggs) => {
+        console.log('Easter Egg "portal" is enabled!')
+        return {
+          ...prevEggs,
+          portal: true,
+        }
+      })
+    }
+  }, [easterEggCodeBuffer, easterEggs])
+  // clear the easter egg code buffer after 1 second if no input is received
+  // within that time
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setEasterEggCodeBuffer([])
+    }, 1000)
+    return () => {
+      clearTimeout(timeoutId)
+    }
+  }, [easterEggCodeBuffer])
+
+  const clearCanvas = (ctx: CanvasRenderingContext2D) => {
     ctx.clearRect(-1, -1, canvasWidth + 2, canvasHeight + 2)
+
+    if (easterEggs.portal) {
+      const wallAlpha = 0.5
+      const wallThickness = 1
+      const wallShadowOffset = 5
+      // draw "portals" on sides of the canvas to indicate that
+      // the snake will teleport to the other side of the board.
+      ctx.shadowBlur = 5
+      ctx.fillStyle = `rgba(39, 167, 216, ${wallAlpha})`
+      ctx.strokeStyle = `rgba(39, 167, 216, ${wallAlpha})`
+      ctx.shadowColor = 'rgba(39, 167, 216, 1)'
+      ctx.shadowOffsetX = wallShadowOffset
+      ctx.strokeRect(-1, 0, wallThickness, canvasHeight) // left side
+      ctx.shadowOffsetX = -wallShadowOffset
+      ctx.fillRect(canvasWidth - 1, -1, wallThickness, canvasHeight) // right side
+      ctx.shadowOffsetY = wallShadowOffset
+      ctx.fillRect(-1, -1, canvasWidth + 1, wallThickness) // top side
+      ctx.shadowOffsetY = -wallShadowOffset
+      ctx.fillRect(-1, canvasHeight + 1, canvasWidth - 1, wallThickness) // bottom side
+    }
+
+    // undo the shadow settings
+    ctx.shadowOffsetX = 0
+    ctx.shadowOffsetY = 0
+    ctx.shadowBlur = 0
+    ctx.shadowColor = 'rgba(0, 0, 0, 0)'
+  }
 
   const generateApplePosition = (): Apple => {
     const x = Math.floor(Math.random() * (canvasWidth / canvasGridSize))
@@ -218,7 +292,7 @@ export default function SnakeGame() {
       nextHeadPosition.x > maxX ||
       nextHeadPosition.y > maxY
     ) {
-      if (easterEggs.wrap === true) {
+      if (easterEggs.portal === true) {
         if (nextHeadPosition.x < 0) {
           nextHeadPosition.x = maxX // need the NEW x value on the other side of the board
         } else if (nextHeadPosition.y < 0) {
@@ -316,38 +390,31 @@ export default function SnakeGame() {
       setGameDelay(1000 / score)
     }
   }, [score])
-  const toggleWrap = useCallback(() => {
-    setEasterEggs((prevEggs) => {
-      console.log(
-        `Easter Egg "wrap" is ${!prevEggs.wrap ? 'enabled!' : 'disabled!'}`
-      )
-      return {
-        ...prevEggs,
-        wrap: !prevEggs.wrap,
-      }
-    })
-  }, [])
 
   const setDirectionUp = useCallback(() => {
+    addInputToEasterEggCodeBuffer('up')
     if (previousVelocity.dy !== 1) {
       setVelocity({ dx: 0, dy: -1 })
     }
-  }, [previousVelocity])
+  }, [addInputToEasterEggCodeBuffer, previousVelocity])
   const setDirectionDown = useCallback(() => {
+    addInputToEasterEggCodeBuffer('down')
     if (previousVelocity.dy !== -1) {
       setVelocity({ dx: 0, dy: 1 })
     }
-  }, [previousVelocity])
+  }, [addInputToEasterEggCodeBuffer, previousVelocity])
   const setDirectionLeft = useCallback(() => {
+    addInputToEasterEggCodeBuffer('left')
     if (previousVelocity.dx !== 1) {
       setVelocity({ dx: -1, dy: 0 })
     }
-  }, [previousVelocity])
+  }, [addInputToEasterEggCodeBuffer, previousVelocity])
   const setDirectionRight = useCallback(() => {
+    addInputToEasterEggCodeBuffer('right')
     if (previousVelocity.dx !== -1) {
       setVelocity({ dx: 1, dy: 0 })
     }
-  }, [previousVelocity])
+  }, [addInputToEasterEggCodeBuffer, previousVelocity])
 
   useEffect(() => {
     const preventWindowMovement = (e: TouchEvent) => {
@@ -369,10 +436,6 @@ export default function SnakeGame() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space' && !isLost) {
         pauseToggle()
-        return
-      }
-      if (e.key === 'e') {
-        toggleWrap()
         return
       }
       if (
@@ -452,7 +515,6 @@ export default function SnakeGame() {
     }
   }, [
     previousVelocity,
-    toggleWrap,
     isLost,
     setDirectionRight,
     setDirectionLeft,
@@ -462,9 +524,27 @@ export default function SnakeGame() {
     isTouching,
   ])
 
+  /**
+   * Show the secret code buffer while the game is running and there is some
+   * easterEgg still available to be found.
+   */
+  const showSecretCode =
+    running &&
+    !isLost &&
+    easterEggCodeBuffer.length > 0 &&
+    Object.values(easterEggs).some((egg) => egg === false)
+
   return (
     <>
       <Head />
+      {showSecretCode && (
+        <div className="easter-egg-code">
+          <FontAwesomeIcon icon={['fas', 'skull-crossbones']} fade />
+          Secret Code
+          <FontAwesomeIcon icon={['fas', 'skull-crossbones']} fade />:{'  '}
+          {easterEggCodeBuffer.join(', ')}
+        </div>
+      )}
       <main>
         <canvas
           id="game-viewport"
@@ -520,12 +600,6 @@ export default function SnakeGame() {
               <p className="final-score">{`Current score: ${score}`}</p>
             </div>
           )}
-        <button
-          onClick={toggleWrap}
-          style={{ backgroundColor: easterEggs.wrap ? 'green' : 'red' }}
-        >
-          {'Toggle Wrap mode'}
-        </button>
       </main>
       <footer>
         Copyright &copy; <a href="https://mueller.dev">Marc Müller</a> 2022
