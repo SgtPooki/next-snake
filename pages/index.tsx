@@ -52,6 +52,7 @@ export default function SnakeGame() {
     dy: 0,
   })
   const [pointerEvent, setPointerEvent] = useState<PointerEvent | null>(null)
+  const [isTouching, setIsTouching] = useState(false)
 
   const clearCanvas = (ctx: CanvasRenderingContext2D) =>
     ctx.clearRect(-1, -1, canvasWidth + 2, canvasHeight + 2)
@@ -392,9 +393,15 @@ export default function SnakeGame() {
     // we should listen for PointerEvents and determine whether they are up/down/left/right moves
     const handleTouchAndMoseDown = (e: PointerEvent) => {
       e.preventDefault() // prevent moving the page around
+      if (e.pointerType === 'touch') {
+        setIsTouching(true)
+      }
       setPointerEvent(e)
     }
     const handleTouchAndMouseUp = (e: PointerEvent) => {
+      if (e.pointerType === 'touch') {
+        setIsTouching(false)
+      }
       const { clientX: newX, clientY: newY } = e
       if (pointerEvent == null) {
         console.error('pointerUp event fired without pointerDown')
@@ -418,13 +425,28 @@ export default function SnakeGame() {
       }
     }
 
+    const preventWindowMovement = (e: TouchEvent) => {
+      if (isTouching) {
+        e.preventDefault()
+      }
+    }
+
+    const canvasElement = canvasRef.current
+    document.addEventListener('touchmove', preventWindowMovement, {
+      passive: false,
+    })
     document.addEventListener('keydown', handleKeyDown)
-    document.addEventListener('pointerdown', handleTouchAndMoseDown)
-    document.addEventListener('pointerup', handleTouchAndMouseUp)
+    canvasElement?.addEventListener('pointerdown', handleTouchAndMoseDown, {
+      passive: false,
+    })
+    canvasElement?.addEventListener('pointerup', handleTouchAndMouseUp, {
+      passive: false,
+    })
     return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-      document.removeEventListener('pointerdown', handleTouchAndMoseDown)
-      document.removeEventListener('pointerup', handleTouchAndMouseUp)
+      window.removeEventListener('touchmove', preventWindowMovement)
+      canvasElement?.removeEventListener('keydown', handleKeyDown)
+      canvasElement?.removeEventListener('pointerdown', handleTouchAndMoseDown)
+      canvasElement?.removeEventListener('pointerup', handleTouchAndMouseUp)
     }
   }, [
     previousVelocity,
@@ -435,6 +457,7 @@ export default function SnakeGame() {
     setDirectionDown,
     setDirectionUp,
     pointerEvent,
+    isTouching,
   ])
 
   return (
