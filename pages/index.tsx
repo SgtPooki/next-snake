@@ -341,6 +341,21 @@ export default function SnakeGame() {
     }
   }, [previousVelocity])
 
+  useEffect(() => {
+    const preventWindowMovement = (e: TouchEvent) => {
+      if (isTouching === true) {
+        console.log('prevented touchMove on window')
+        e.preventDefault()
+      }
+    }
+    document.addEventListener('touchmove', preventWindowMovement, {
+      passive: false,
+    })
+    return () => {
+      document.removeEventListener('touchmove', preventWindowMovement)
+    }
+  }, [isTouching])
+
   // Event Listener: Key Presses
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -364,8 +379,6 @@ export default function SnakeGame() {
           'd',
         ].includes(e.key)
       ) {
-        // let velocity = { dx: 0, dy: 0 }
-
         switch (e.key) {
           case 'ArrowRight':
           case 'd':
@@ -392,16 +405,12 @@ export default function SnakeGame() {
     // we need to handle swipes for mobile devices, and mouse events, so
     // we should listen for PointerEvents and determine whether they are up/down/left/right moves
     const handleTouchAndMoseDown = (e: PointerEvent) => {
-      e.preventDefault() // prevent moving the page around
-      if (e.pointerType === 'touch') {
-        setIsTouching(true)
-      }
+      setIsTouching(true)
       setPointerEvent(e)
     }
     const handleTouchAndMouseUp = (e: PointerEvent) => {
-      if (e.pointerType === 'touch') {
-        setIsTouching(false)
-      }
+      setIsTouching(false)
+
       const { clientX: newX, clientY: newY } = e
       if (pointerEvent == null) {
         console.error('pointerUp event fired without pointerDown')
@@ -424,29 +433,14 @@ export default function SnakeGame() {
         }
       }
     }
-
-    const preventWindowMovement = (e: TouchEvent) => {
-      if (isTouching) {
-        e.preventDefault()
-      }
-    }
-
     const canvasElement = canvasRef.current
-    document.addEventListener('touchmove', preventWindowMovement, {
-      passive: false,
-    })
     document.addEventListener('keydown', handleKeyDown)
-    canvasElement?.addEventListener('pointerdown', handleTouchAndMoseDown, {
-      passive: false,
-    })
-    canvasElement?.addEventListener('pointerup', handleTouchAndMouseUp, {
-      passive: false,
-    })
+    window.addEventListener('pointerup', handleTouchAndMouseUp)
+    canvasElement?.addEventListener('pointerdown', handleTouchAndMoseDown)
     return () => {
-      window.removeEventListener('touchmove', preventWindowMovement)
-      canvasElement?.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('pointerup', handleTouchAndMouseUp)
       canvasElement?.removeEventListener('pointerdown', handleTouchAndMoseDown)
-      canvasElement?.removeEventListener('pointerup', handleTouchAndMouseUp)
     }
   }, [
     previousVelocity,
