@@ -120,71 +120,77 @@ export default function SnakeGame() {
     ctx.strokeRect(x + 0.5, y + 0.5, w, h)
   }
 
-  const drawSnake = (ctx: CanvasRenderingContext2D) => {
-    ctx.fillStyle = '#0170F3'
-    ctx.strokeStyle = '#003779'
+  const drawSnake = useCallback(
+    (ctx: CanvasRenderingContext2D) => {
+      ctx.fillStyle = '#0170F3'
+      ctx.strokeStyle = '#003779'
 
-    fillRect(
-      ctx,
-      snake.head.x * canvasGridSize,
-      snake.head.y * canvasGridSize,
-      canvasGridSize,
-      canvasGridSize
-    )
-
-    strokeRect(
-      ctx,
-      snake.head.x * canvasGridSize,
-      snake.head.y * canvasGridSize,
-      canvasGridSize,
-      canvasGridSize
-    )
-
-    snake.trail.forEach((snakePart) => {
       fillRect(
         ctx,
-        snakePart.x * canvasGridSize,
-        snakePart.y * canvasGridSize,
+        snake.head.x * canvasGridSize,
+        snake.head.y * canvasGridSize,
         canvasGridSize,
         canvasGridSize
       )
 
       strokeRect(
         ctx,
-        snakePart.x * canvasGridSize,
-        snakePart.y * canvasGridSize,
-        canvasGridSize,
-        canvasGridSize
-      )
-    })
-  }
-
-  const drawApple = (ctx: CanvasRenderingContext2D) => {
-    ctx.fillStyle = '#DC3030' // '#38C172' // '#F4CA64'
-    ctx.strokeStyle = '#881A1B' // '#187741' // '#8C6D1F
-
-    if (
-      apple &&
-      typeof apple.x !== 'undefined' &&
-      typeof apple.y !== 'undefined'
-    ) {
-      fillRect(
-        ctx,
-        apple.x * canvasGridSize,
-        apple.y * canvasGridSize,
+        snake.head.x * canvasGridSize,
+        snake.head.y * canvasGridSize,
         canvasGridSize,
         canvasGridSize
       )
 
-      strokeRect(
-        ctx,
-        apple.x * canvasGridSize,
-        apple.y * canvasGridSize,
-        canvasGridSize,
-        canvasGridSize
-      )
-    }
-  }
+      snake.trail.forEach((snakePart) => {
+        fillRect(
+          ctx,
+          snakePart.x * canvasGridSize,
+          snakePart.y * canvasGridSize,
+          canvasGridSize,
+          canvasGridSize
+        )
+
+        strokeRect(
+          ctx,
+          snakePart.x * canvasGridSize,
+          snakePart.y * canvasGridSize,
+          canvasGridSize,
+          canvasGridSize
+        )
+      })
+    },
+    [snake]
+  )
+
+  const drawApple = useCallback(
+    (ctx: CanvasRenderingContext2D) => {
+      ctx.fillStyle = '#DC3030' // '#38C172' // '#F4CA64'
+      ctx.strokeStyle = '#881A1B' // '#187741' // '#8C6D1F
+
+      if (
+        apple &&
+        typeof apple.x !== 'undefined' &&
+        typeof apple.y !== 'undefined'
+      ) {
+        fillRect(
+          ctx,
+          apple.x * canvasGridSize,
+          apple.y * canvasGridSize,
+          canvasGridSize,
+          canvasGridSize
+        )
+
+        strokeRect(
+          ctx,
+          apple.x * canvasGridSize,
+          apple.y * canvasGridSize,
+          canvasGridSize,
+          canvasGridSize
+        )
+      }
+    },
+    [apple]
+  )
 
   // Update snake.head, snake.trail and apple positions. Check for collisions.
   const updateSnake = () => {
@@ -246,24 +252,33 @@ export default function SnakeGame() {
   }
 
   // Game Hook
-  useEffect(() => {
+  const gameLoop = useCallback(() => {
     const canvas = canvasRef?.current
     const ctx = canvas?.getContext('2d')
-
+    let rafId: number | null = null
     if (ctx && !isLost) {
-      requestAnimationFrame(() => {
-        clearCanvas(ctx)
-        drawApple(ctx)
-        drawSnake(ctx)
-      })
+      rafId = requestAnimationFrame(gameLoop)
+      clearCanvas(ctx)
+      drawApple(ctx)
+      drawSnake(ctx)
     }
-  }, [snake])
+    return () => {
+      if (rafId) {
+        cancelAnimationFrame(rafId)
+      }
+    }
+  }, [drawApple, drawSnake, isLost])
+
+  useEffect(() => {
+    gameLoop()
+  }, [gameLoop])
 
   // Game Update Interval
   useInterval(
     () => {
       if (!isLost) {
-        requestAnimationFrame(() => updateSnake())
+        // TODO: move into gameLoop with logic to handle keep game at the same speed (using gameDelay)
+        updateSnake()
       }
     },
     running && countDown === 0 ? gameDelay : null
