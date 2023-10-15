@@ -208,20 +208,22 @@ export default function SnakeGame() {
       ctx.fillStyle = '#0170F3'
       ctx.strokeStyle = '#003779'
 
+      // make the snake head a little bigger than the rest of the snake
+
       fillRect(
         ctx,
-        snake.head.x * canvasGridSize,
-        snake.head.y * canvasGridSize,
-        canvasGridSize,
-        canvasGridSize
+        snake.head.x * canvasGridSize - 1,
+        snake.head.y * canvasGridSize - 1,
+        canvasGridSize + 2,
+        canvasGridSize + 2
       )
 
       strokeRect(
         ctx,
-        snake.head.x * canvasGridSize,
-        snake.head.y * canvasGridSize,
-        canvasGridSize,
-        canvasGridSize
+        snake.head.x * canvasGridSize - 1,
+        snake.head.y * canvasGridSize - 1,
+        canvasGridSize + 2,
+        canvasGridSize + 2
       )
 
       snake.trail.forEach((snakePart) => {
