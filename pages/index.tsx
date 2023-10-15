@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import useInterval from '@use-it/interval'
 
 import { HeadComponent as Head } from 'components/Head'
+import { registerDprCanvas } from 'components/lib/resize-utils'
 
 type Apple = {
   x: number
@@ -120,6 +121,13 @@ export default function SnakeGame() {
   ) => {
     ctx.strokeRect(x + 0.5, y + 0.5, w, h)
   }
+  const canvasEl = canvasRef.current
+  useEffect(() => {
+    if (canvasEl) {
+      registerDprCanvas(canvasEl, [canvasWidth, canvasHeight])
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // do NOT add canvasEl to the dependency array, or we will get an infinite loop
 
   const drawSnake = useCallback(
     (ctx: CanvasRenderingContext2D) => {
@@ -257,7 +265,7 @@ export default function SnakeGame() {
     const canvas = canvasRef?.current
     const ctx = canvas?.getContext('2d')
     let rafId: number | null = null
-    if (ctx && !isLost) {
+    if (canvas != null && ctx != null && !isLost) {
       rafId = requestAnimationFrame(gameLoop)
       clearCanvas(ctx)
       drawApple(ctx)
@@ -435,11 +443,11 @@ export default function SnakeGame() {
     }
     const canvasElement = canvasRef.current
     document.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('pointerup', handleTouchAndMouseUp)
+    canvasElement?.addEventListener('pointerup', handleTouchAndMouseUp)
     canvasElement?.addEventListener('pointerdown', handleTouchAndMoseDown)
     return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-      window.removeEventListener('pointerup', handleTouchAndMouseUp)
+      document.removeEventListener('keydown', handleKeyDown)
+      canvasElement?.removeEventListener('pointerup', handleTouchAndMouseUp)
       canvasElement?.removeEventListener('pointerdown', handleTouchAndMoseDown)
     }
   }, [
@@ -459,6 +467,7 @@ export default function SnakeGame() {
       <Head />
       <main>
         <canvas
+          id="game-viewport"
           ref={canvasRef}
           width={canvasWidth + 1}
           height={canvasHeight + 1}
