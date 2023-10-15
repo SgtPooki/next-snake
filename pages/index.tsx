@@ -1,15 +1,37 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import useInterval from '@use-it/interval'
 
 import { HeadComponent as Head } from 'components/Head'
 import { registerDprCanvas } from 'components/lib/resize-utils'
 
+type easterEggs = 'portal'
 /**
  * Easter Eggs:
  * `portal` : Konami Code (up, up, down, down, left, right, left, right)
  */
+const secretCodeMap: Map<easterEggs, string[]> = new Map([
+  // portal: 'upupdowndownleftrightleftright',
+  ['portal', ['up', 'up', 'down', 'down']],
+])
+
+/**
+ * for each key in secretCodeMap, check if the last n cmds match the secret code, and
+ * return the key if they do
+ */
+const checkForSecretCodes = (cmds: string[]): easterEggs | null => {
+  let codeEntered: null | easterEggs = null
+  secretCodeMap.forEach((secretCode, key) => {
+    if (
+      cmds.length >= secretCode.length &&
+      cmds.slice(-secretCode.length).join('') === secretCode.join('')
+    ) {
+      codeEntered = key
+    }
+  })
+  return codeEntered
+}
 
 type Apple = {
   x: number
@@ -75,11 +97,22 @@ export default function SnakeGame() {
     })
   }, [])
 
+  /**
+   * Show the secret code buffer while the game is running and there is some
+   * easterEgg still available to be found.
+   */
+  const secretCodeAvailable = useMemo(
+    () =>
+      running &&
+      !isLost &&
+      easterEggCodeBuffer.length > 0 &&
+      Object.values(easterEggs).some((egg) => egg === false),
+    [running, isLost, easterEggCodeBuffer, easterEggs]
+  )
   useEffect(() => {
-    const secretCode = easterEggCodeBuffer.join('')
-    console.log(`secretCode: `, secretCode)
+    const secretCode = checkForSecretCodes(easterEggCodeBuffer)
     // if (!easterEggs.portal && secretCode === 'upupdowndownleftrightleftright') {
-    if (!easterEggs.portal && secretCode.startsWith('upupdowndown')) {
+    if (secretCode === 'portal') {
       console.log('Konami Code entered!')
       setEasterEggCodeBuffer([])
       setEasterEggs((prevEggs) => {
@@ -90,7 +123,8 @@ export default function SnakeGame() {
         }
       })
     }
-  }, [easterEggCodeBuffer, easterEggs])
+  }, [easterEggCodeBuffer, easterEggs, secretCodeAvailable])
+
   // clear the easter egg code buffer after 1 second if no input is received
   // within that time
   useEffect(() => {
@@ -526,20 +560,10 @@ export default function SnakeGame() {
     isTouching,
   ])
 
-  /**
-   * Show the secret code buffer while the game is running and there is some
-   * easterEgg still available to be found.
-   */
-  const showSecretCode =
-    running &&
-    !isLost &&
-    easterEggCodeBuffer.length > 0 &&
-    Object.values(easterEggs).some((egg) => egg === false)
-
   return (
     <>
       <Head />
-      {showSecretCode && (
+      {secretCodeAvailable && (
         <div className="easter-egg-code">
           <FontAwesomeIcon icon={['fas', 'skull-crossbones']} fade />
           Secret Code
